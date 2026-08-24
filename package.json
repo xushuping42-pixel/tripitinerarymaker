@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/process-templates.js && next build",
+    "postbuild": "next-sitemap",
     "start": "next start",
     "lint": "next lint",
     "generate:template-assets": "node scripts/generate-template-assets.mjs"
@@ -14,6 +15,7 @@
     "jspdf": "^3.0.1",
     "lucide-react": "^0.468.0",
     "next": "^15.1.0",
+    "next-sitemap": "^4.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
