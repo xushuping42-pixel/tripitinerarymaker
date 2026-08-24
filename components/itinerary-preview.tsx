@@ -1,7 +1,7 @@
 "use client";
 
 export type ItineraryItem = { id: string; startTime: string; endTime: string; activity: string; notes: string };
-export type ItineraryDay = { id: string; items: ItineraryItem[] };
+export type ItineraryDay = { id: string; items: ItineraryItem[]; sourceIndex?: number };
 export type ItineraryData = { destination: string; startDate: string; returnDate: string; days: ItineraryDay[] };
 export type Template = { id: string; name: string; image?: string };
 
@@ -18,9 +18,10 @@ function dayDate(startDate: string, index: number) {
   return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(date);
 }
 
-export function ItineraryPreview({ data, selectedTemplate, editLink, id, mode = "screen" }: {
-  data: ItineraryData; selectedTemplate: Template; editLink?: string; id?: string; mode?: "screen" | "modal" | "print";
+export function ItineraryPreview({ data, selectedTemplate, editLink, id, pageDays, mode = "screen" }: {
+  data: ItineraryData; selectedTemplate: Template; editLink?: string; id?: string; pageDays?: ItineraryDay[]; mode?: "screen" | "modal" | "print";
 }) {
+  const displayedDays = pageDays ?? data.days;
   return <article id={id} className={`itinerary-paper preview-${mode}`} aria-label="Travel itinerary preview">
     {selectedTemplate.image && <img className="paper-art" src={selectedTemplate.image} alt="" width="1024" height="1536" loading={mode === "screen" ? "lazy" : "eager"} />}
     <div className="paper-wash" />
@@ -32,15 +33,15 @@ export function ItineraryPreview({ data, selectedTemplate, editLink, id, mode = 
       </div>
       <div className="paper-rule" />
       <div className="paper-days">
-        {data.days.map((day, index) => <section key={day.id} className="paper-day">
-          <h4>{dayDate(data.startDate, index) || "Your day plan"}</h4>
+        {displayedDays.map((day, index) => <section key={day.id} className="paper-day" data-itinerary-day={day.id}>
+          <h4>{dayDate(data.startDate, day.sourceIndex ?? index) || "Your day plan"}</h4>
           {day.items.some((item) => item.startTime || item.endTime || item.activity || item.notes) ? day.items.map((item) => <div className="paper-item" key={item.id}>
             <div className="paper-time">{item.startTime || "—"}{item.endTime ? ` — ${item.endTime}` : ""}</div>
             <div><strong>{item.activity || "Activity"}</strong></div>
           </div>) : <p className="paper-empty">Add your plans to see them here.</p>}
         </section>)}
       </div>
-      {editLink && <div className="paper-edit">Edit this itinerary anytime:<br />{editLink}</div>}
+      {editLink && <div className="paper-edit">Edit this itinerary anytime:<br /><a href={editLink}>{editLink}</a></div>}
       <div className="paper-footer">Trip Itinerary Maker</div>
     </div>
   </article>;
