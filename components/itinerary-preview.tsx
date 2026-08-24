@@ -3,7 +3,7 @@
 export type ItineraryItem = { id: string; startTime: string; endTime: string; activity: string; notes: string };
 export type ItineraryDay = { id: string; items: ItineraryItem[]; sourceIndex?: number };
 export type ItineraryData = { destination: string; startDate: string; returnDate: string; days: ItineraryDay[] };
-export type Template = { id: string; name: string; image?: string };
+export type Template = { id: string; name: string; image?: string; thumbnail?: string };
 
 export function readableDate(value: string) {
   if (!value) return "";

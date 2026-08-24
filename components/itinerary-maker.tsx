@@ -3,22 +3,36 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Check, Clock3, Download, Expand, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { templates, type TemplateStyle } from "@/data/templates";
 import { ItineraryPreview, type ItineraryData, type ItineraryDay, type ItineraryItem, type Template, readableDate } from "@/components/itinerary-preview";
 
-const templatesByCategory = {
-  Sunny: ["Sunny Holiday 01", "Clear Sky Escape 02", "Orange Sunset 03", "Morning Glow 04", "Seaside Vacation 05"],
-  Animal: ["Forest Morning 01", "Mountain Mist 02", "Nature Walk 03", "Green Retreat 04", "Wild Meadow 05"],
-  Minimalist: ["Quiet Space 01", "Soft Paper 02", "Calm Lines 03", "Open Notes 04", "Simple Route 05"],
-  Vintage: ["Film Journey 01", "Old Times 02", "Postcard Route 03", "Classic Escape 04", "Golden Memory 05"],
-  Floral: ["Flower Trip 01", "Rose Letter 02", "Spring Garden 03", "Petal Weekend 04", "Blooming Route 05"],
-  "Cute & Playful": ["Cloud Journey 01", "Colorful Holiday 02", "Happy Departure 03", "Little Adventure 04", "Sunny Friends 05"],
-  "Original Text": ["Plain Paper"],
-} as const;
-
-const availableTemplates: Template[] = [
-  { id: "sunny-holiday-01", name: "Sunny Holiday 01", image: "/templates/sunny-holiday-01.webp" },
-  { id: "plain-paper", name: "Plain Paper" },
+const categoryDefinitions: ReadonlyArray<{ id: TemplateStyle | "original-text"; label: string }> = [
+  { id: "architectural", label: "Architectural" },
+  { id: "cute-playful", label: "Cute & Playful" },
+  { id: "floral", label: "Floral" },
+  { id: "animal", label: "Animal" },
+  { id: "minimalist", label: "Minimalist" },
+  { id: "sunny", label: "Sunny" },
+  { id: "vintage", label: "Vintage" },
+  { id: "original-text", label: "Original Text" },
 ];
+
+type TemplateCategory = TemplateStyle | "original-text";
+const templateStyles: readonly TemplateStyle[] = ["architectural", "cute-playful", "floral", "animal", "minimalist", "sunny", "vintage"];
+
+function createTemplate(style: TemplateStyle, thumbnail: string): Template {
+  const preview = thumbnail.replace("-thumb.webp", "-preview.webp");
+  const number = thumbnail.match(/-(\d+)-thumb\.webp$/)?.[1] ?? "";
+  const label = categoryDefinitions.find((category) => category.id === style)?.label ?? style;
+  return { id: thumbnail.replace("-thumb.webp", ""), name: `${label} ${number}`, thumbnail: `/thumbnails/${style}/${thumbnail}`, image: `/previews/${style}/${preview}` };
+}
+
+const originalTextTemplate: Template = { id: "plain-paper", name: "Plain Paper" };
+const availableTemplates: Template[] = [
+  ...templateStyles.flatMap((style) => templates[style].map((thumbnail) => createTemplate(style, thumbnail))),
+  originalTextTemplate,
+];
+const defaultTemplateId = templates.architectural[0] ? createTemplate("architectural", templates.architectural[0]).id : originalTextTemplate.id;
 
 type Draft = { id: string; data: ItineraryData; selectedTemplateId: string; updatedAt: string };
 const freshItem = (): ItineraryItem => ({ id: crypto.randomUUID(), startTime: "", endTime: "", activity: "", notes: "" });
@@ -85,8 +99,8 @@ function createPdfPages(days: ItineraryDay[], layout?: PageLayout) {
 export function ItineraryMaker() {
   const [data, setData] = useState<ItineraryData>(() => freshData());
   const [previewData, setPreviewData] = useState<ItineraryData>(() => freshData());
-  const [selectedTemplateId, setSelectedTemplateId] = useState("sunny-holiday-01");
-  const [category, setCategory] = useState<keyof typeof templatesByCategory>("Sunny");
+  const [selectedTemplateId, setSelectedTemplateId] = useState(defaultTemplateId);
+  const [category, setCategory] = useState<TemplateCategory>("architectural");
   const [dateError, setDateError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editLink, setEditLink] = useState("");
@@ -134,13 +148,17 @@ export function ItineraryMaker() {
     const pathMatch = window.location.pathname.match(/^\/edit\/([^/]+)/);
     const params = new URLSearchParams(window.location.search);
     const requestedId = pathMatch?.[1] ?? params.get("edit");
+    // The homepage always starts with a clean one-day form. Saved drafts are
+    // restored only when the visitor opens their dedicated edit link.
+    if (!requestedId) return;
     const stored = window.localStorage.getItem("trip-itinerary-draft");
     if (!stored) return;
     try {
       const draft = JSON.parse(stored) as Draft;
-      if (!requestedId || draft.id === requestedId) {
+      if (draft.id === requestedId) {
         const restored = draft.data?.days?.length ? draft.data : freshData();
-        setData(restored); setPreviewData(restored); setSelectedTemplateId(draft.selectedTemplateId || "sunny-holiday-01");
+        const restoredTemplateId = availableTemplates.some((template) => template.id === draft.selectedTemplateId) ? draft.selectedTemplateId : defaultTemplateId;
+        setData(restored); setPreviewData(restored); setSelectedTemplateId(restoredTemplateId);
         setEditLink(`${window.location.origin}/edit/${draft.id}`);
       }
     } catch { window.localStorage.removeItem("trip-itinerary-draft"); }
@@ -211,7 +229,6 @@ export function ItineraryMaker() {
     finally { setDownloading(false); }
   };
 
-  const selectedCategoryTemplates = templatesByCategory[category];
   const previewProps = { data: previewData, pages: previewPages, selectedTemplate, editLink };
   const currentDateSummary = useMemo(() => data.startDate && data.returnDate ? `${readableDate(data.startDate)} — ${readableDate(data.returnDate)}` : "", [data.startDate, data.returnDate]);
 
@@ -240,7 +257,7 @@ export function ItineraryMaker() {
         </div>
         <div className="editor-actions"><Button onClick={() => setModalOpen(true)} className="primary-action"><Expand size={16} /> Continue to preview</Button><Button onClick={downloadPdf} className="secondary-action" disabled={downloading}><Download size={16} /> {downloading ? "Preparing PDF…" : "Download PDF"}</Button></div>{pdfError && <p className="pdf-error" role="alert">{pdfError}</p>}{pdfStatus && <p className="pdf-status" role="status">{pdfStatus}</p>}
       </section>
-        <TemplateSelector category={category} setCategory={setCategory} names={selectedCategoryTemplates} selectedId={selectedTemplateId} onSelect={(template) => { setSelectedTemplateId(template.id); }} />
+        <TemplateSelector category={category} setCategory={setCategory} selectedId={selectedTemplateId} onSelect={(template) => { setSelectedTemplateId(template.id); }} />
       </div>
       <aside className="preview-column">
         <PreviewPanel {...previewProps} onFullscreen={() => setModalOpen(true)} />
@@ -284,12 +301,13 @@ function TimePicker({ value, ariaLabel, onChange }: { value: string; ariaLabel: 
   </span>;
 }
 
-function TemplateSelector({ category, setCategory, names, selectedId, onSelect }: { category: keyof typeof templatesByCategory; setCategory: (value: keyof typeof templatesByCategory) => void; names: readonly string[]; selectedId: string; onSelect: (template: Template) => void }) {
-  return <section className="template-section" id="template-section"><h2>Choose your itinerary background</h2><p>Pick a design that matches your trip.</p><div className="category-tabs" aria-label="Template categories">{Object.keys(templatesByCategory).map((item) => <button key={item} onClick={() => setCategory(item as keyof typeof templatesByCategory)} className={category === item ? "active" : ""}>{item}</button>)}</div><div className="template-grid">{names.map((name) => {
-    const template = availableTemplates.find((item) => item.name === name); if (!template) return <div className="template-slot" key={name} aria-hidden="true" />;
+function TemplateSelector({ category, setCategory, selectedId, onSelect }: { category: TemplateCategory; setCategory: (value: TemplateCategory) => void; selectedId: string; onSelect: (template: Template) => void }) {
+  const renderCard = (template: Template) => {
     const selected = template.id === selectedId;
-    return <button className={`template-card ${selected ? "selected" : ""}`} onClick={() => onSelect(template)} key={template.id}>{template.image ? <img src={template.image} width="1024" height="1536" alt="Sunny Holiday trip itinerary template" loading="lazy" /> : <span className="plain-thumb" />}<span>{template.name}</span>{selected && <i><Check size={12} /></i>}</button>;
-  })}</div></section>;
+    return <button className={`template-card ${selected ? "selected" : ""}`} onClick={() => onSelect(template)} key={template.id}>{template.thumbnail ? <img src={template.thumbnail} width="300" height="424" alt={`${template.name} trip itinerary template`} loading="lazy" /> : <span className="plain-thumb" />}<span>{template.name}</span>{selected && <i><Check size={12} /></i>}</button>;
+  };
+
+  return <section className="template-section" id="template-section"><h2>Choose your itinerary background</h2><p>Pick a design that matches your trip.</p><div className="category-tabs" aria-label="Template categories">{categoryDefinitions.map((item) => <button key={item.id} onClick={() => setCategory(item.id)} className={category === item.id ? "active" : ""}>{item.label}</button>)}</div>{templateStyles.map((style) => <div key={style} className={`template-grid ${category === style ? "" : "hidden"}`}>{templates[style].map((thumbnail) => renderCard(createTemplate(style, thumbnail)))}</div>)}<div className={`template-grid ${category === "original-text" ? "" : "hidden"}`}>{renderCard(originalTextTemplate)}</div></section>;
 }
 
 function FaqSection() {

@@ -15,3 +15,6 @@ out/
 # editor and system files
 .DS_Store
 *.tsbuildinfo
+
+# Generated template-asset processing cache
+scripts/.template-assets-manifest.json
