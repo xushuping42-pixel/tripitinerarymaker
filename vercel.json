@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "missing": [
+        {
+          "type": "host",
+          "value": "www.tripitinerarymaker.com"
+        }
+      ],
+      "destination": "https://www.tripitinerarymaker.com/$1",
+      "statusCode": 301
+    }
+  ]
+}
