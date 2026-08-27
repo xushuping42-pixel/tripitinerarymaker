@@ -1,7 +1,7 @@
 "use client";
 
 export type ItineraryItem = { id: string; startTime: string; endTime: string; activity: string; notes: string };
-export type ItineraryDay = { id: string; items: ItineraryItem[]; sourceIndex?: number };
+export type ItineraryDay = { id: string; items: ItineraryItem[]; sourceIndex?: number; label?: string };
 export type ItineraryData = { destination: string; startDate: string; returnDate: string; days: ItineraryDay[] };
 export type Template = { id: string; name: string; image?: string; thumbnail?: string };
 
@@ -34,7 +34,7 @@ export function ItineraryPreview({ data, selectedTemplate, editLink, id, pageDay
       <div className="paper-rule" />
       <div className="paper-days">
         {displayedDays.map((day, index) => <section key={day.id} className="paper-day" data-itinerary-day={day.id}>
-          <h4>{dayDate(data.startDate, day.sourceIndex ?? index) || "Your day plan"}</h4>
+          <h4>{day.label || dayDate(data.startDate, day.sourceIndex ?? index) || "Your day plan"}</h4>
           {day.items.some((item) => item.startTime || item.endTime || item.activity || item.notes) ? day.items.map((item) => <div className="paper-item" key={item.id}>
             <div className="paper-time">{item.startTime || "—"}{item.endTime ? ` — ${item.endTime}` : ""}</div>
             <div><strong>{item.activity || "Activity"}</strong></div>

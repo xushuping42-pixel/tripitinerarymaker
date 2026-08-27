@@ -1,0 +1,58 @@
+.hero { width:min(1180px, calc(100% - 40px)); margin:0 auto; padding:58px 0 49px; }
+.breadcrumb { color:var(--muted); font-size:14px; margin:0 0 24px; }
+.breadcrumb ol, .breadcrumb li { display:flex; align-items:center; gap:8px; margin:0; padding:0; list-style:none; }
+.breadcrumb a:hover { color:var(--green); }
+.hero h1, .category h2, .howTo h2, .faq h2 { font-family:var(--font-serif), Georgia, serif; font-weight:400; letter-spacing:-.026em; }
+.hero h1 { max-width:880px; font-size:clamp(42px, 5vw, 59px); line-height:1.04; margin:0; }
+.hero > p:last-child { max-width:745px; color:var(--muted); font-size:18px; line-height:1.6; margin:22px 0 0; }
+.pageBody { width:min(1180px, calc(100% - 40px)); margin:0 auto; }
+.category { border-top:1px solid var(--line); padding:43px 0 48px; scroll-margin-top:90px; }
+.categoryIntro { display:grid; grid-template-columns:minmax(260px, .85fr) minmax(0, 1.15fr); gap:44px; align-items:start; margin-bottom:25px; }
+.category h2 { font-size:32px; line-height:1.08; margin:0; }
+.categoryIntro p { color:var(--muted); font-size:14px; line-height:1.65; margin:1px 0 0; }
+.templateGrid { display:grid; grid-template-columns:repeat(4, 1fr); gap:20px; }
+.templateCard { display:flex; flex-direction:column; min-width:0; scroll-margin-top:100px; }
+.imageLink { display:block; position:relative; overflow:hidden; border-radius:8px; background:#ece9e1; outline-offset:3px; }
+.imageLink img { display:block; width:100%; aspect-ratio:5 / 7; object-fit:cover; border-radius:8px; transition:transform .25s ease; }
+.imageLink:hover img { transform:scale(1.025); }
+.demoImageLink { isolation:isolate; }
+.demoImageLink :global(.itinerary-paper) { width:100%; height:100%; min-height:0; aspect-ratio:5 / 7; box-shadow:none; }
+.demoImageLink :global(.paper-body) { padding:7.5% 8%; }
+.demoBadge { position:absolute; z-index:5; top:10px; right:10px; padding:5px 7px; border-radius:999px; background:rgba(38,52,46,.88); color:#fff; font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; }
+.seeDemoButton { width:100%; min-height:36px; margin:13px 0 0; border:1px solid #8fa092; border-radius:999px; background:transparent; color:var(--green); font-size:13px; font-weight:650; }
+.seeDemoButton:hover { background:var(--soft-green); }
+.cardCopy { display:flex; flex:1 1 auto; flex-direction:column; padding-top:12px; }
+.templateName { color:var(--ink); font-family:var(--font-serif), Georgia, serif; font-size:20px; line-height:1.15; }
+.cardCopy p { color:#5d6961; font-size:13px; line-height:1.55; margin:7px 0; }
+.cardCopy > span { display:block; margin-bottom:13px; color:var(--green); font-size:12px; font-weight:650; line-height:1.45; }
+.useTemplateButton { display:inline-flex; align-items:center; justify-content:center; width:100%; min-height:39px; margin-top:auto; padding:8px 11px; border:1px solid var(--green); border-radius:999px; background:var(--green); color:#fff; font-size:13px; font-weight:650; text-align:center; transition:background .2s ease, color .2s ease; }
+.useTemplateButton:hover { background:transparent; color:var(--green); }
+.plainPaper { display:flex; flex-direction:column; gap:13%; width:100%; aspect-ratio:5 / 7; padding:15% 13%; background:repeating-linear-gradient(to bottom, #fffefa, #fffefa 46px, #e6e0d4 47px); color:#3d5145; }
+.plainPaper span { font-family:var(--font-serif), Georgia, serif; font-size:clamp(13px, 1.25vw, 18px); letter-spacing:.06em; }
+.plainPaper i { display:block; height:1px; width:100%; background:#c8d0c7; }
+.howTo, .sampleItinerary, .faq { border-top:1px solid var(--line); padding:48px 0; }
+.howTo h2, .sampleItinerary h2, .faq h2 { font-size:37px; line-height:1.08; margin:0 0 29px; }
+.steps { display:grid; grid-template-columns:repeat(4, 1fr); gap:24px; }
+.steps article { border-top:2px solid #b9c9bb; padding-top:15px; }
+.steps span { color:var(--green); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+.steps h3 { color:var(--ink); font-family:var(--font-serif), Georgia, serif; font-size:22px; font-weight:400; line-height:1.14; margin:8px 0; }
+.steps p { color:var(--muted); font-size:13px; line-height:1.6; margin:0; }
+.sampleIntro { max-width:760px; color:var(--muted); font-size:16px; line-height:1.65; margin:-9px 0 30px; }
+.sampleDays { display:grid; grid-template-columns:repeat(3, 1fr); gap:24px; }
+.sampleDay { border-top:2px solid #b9c9bb; padding-top:15px; }
+.sampleDay h3 { color:var(--ink); font-family:var(--font-serif), Georgia, serif; font-size:22px; font-weight:400; line-height:1.14; margin:0 0 12px; }
+.sampleDay ul { display:grid; gap:10px; margin:0; padding-left:18px; }
+.sampleDay li { color:var(--muted); font-size:13px; line-height:1.6; padding-left:2px; }
+.sampleDay time { color:var(--green); font-weight:700; }
+.sampleLink { display:inline-flex; margin-top:28px; color:var(--green); font-size:14px; font-weight:700; text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:4px; }
+.sampleLink:hover { color:var(--ink); }
+.faq { padding-bottom:66px; }
+.faq details { border-top:1px solid var(--line); }
+.faq details:last-child { border-bottom:1px solid var(--line); }
+.faq summary { display:flex; align-items:center; justify-content:space-between; gap:24px; list-style:none; cursor:pointer; padding:18px 1px; color:var(--ink); font-size:15px; font-weight:650; }
+.faq summary::-webkit-details-marker { display:none; }
+.faq summary span { color:var(--green); font-size:24px; font-weight:400; }
+.faq details[open] summary span { font-size:0; }.faq details[open] summary span::after { content:"−"; font-size:24px; }
+.faq details p { max-width:900px; color:var(--muted); font-size:14px; line-height:1.65; margin:0; padding:0 0 18px; }
+@media (max-width:1023px) { .templateGrid { grid-template-columns:repeat(3, 1fr); } .categoryIntro { gap:30px; } .steps { grid-template-columns:repeat(2, 1fr); row-gap:34px; } .sampleDays { grid-template-columns:1fr; gap:24px; } }
+@media (max-width:767px) { .hero, .pageBody { width:calc(100% - 32px); } .hero { padding:35px 0 36px; }.breadcrumb { margin-bottom:18px; }.hero h1 { font-size:clamp(35px, 10vw, 42px); }.hero > p:last-child { font-size:16px; margin-top:18px; }.category { padding:32px 0 37px; }.categoryIntro { display:block; margin-bottom:20px; }.category h2 { font-size:29px; }.categoryIntro p { font-size:13px; margin-top:11px; }.templateGrid { grid-template-columns:repeat(2, 1fr); gap:20px; }.cardCopy { padding-top:9px; }.templateName { font-size:18px; }.cardCopy p { font-size:12px; line-height:1.5; }.cardCopy > span, .useTemplateButton, .seeDemoButton { font-size:11px; }.demoBadge { top:7px; right:7px; font-size:8px; }.howTo, .sampleItinerary, .faq { padding:36px 0; }.howTo h2, .sampleItinerary h2, .faq h2 { font-size:31px; margin-bottom:23px; }.sampleIntro { font-size:14px; margin-top:-5px; margin-bottom:24px; }.sampleDay h3 { font-size:21px; }.sampleDay li { font-size:13px; }.faq { padding-bottom:50px; }.faq summary { padding:16px 0; font-size:14px; }.faq details p { font-size:13px; } }

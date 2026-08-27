@@ -3,8 +3,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Check, Clock3, Download, Expand, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { templates, type TemplateStyle } from "@/data/templates";
+import templateRecords from "@/data/templates.json";
 import { ItineraryPreview, type ItineraryData, type ItineraryDay, type ItineraryItem, type Template, readableDate } from "@/components/itinerary-preview";
+
+type TemplateStyle = "architectural" | "cute-playful" | "floral" | "animal" | "minimalist" | "sunny" | "vintage";
+type TemplateRecord = typeof templateRecords[number];
 
 const categoryDefinitions: ReadonlyArray<{ id: TemplateStyle | "original-text"; label: string }> = [
   { id: "architectural", label: "Architectural" },
@@ -20,19 +23,20 @@ const categoryDefinitions: ReadonlyArray<{ id: TemplateStyle | "original-text"; 
 type TemplateCategory = TemplateStyle | "original-text";
 const templateStyles: readonly TemplateStyle[] = ["architectural", "cute-playful", "floral", "animal", "minimalist", "sunny", "vintage"];
 
-function createTemplate(style: TemplateStyle, thumbnail: string): Template {
-  const preview = thumbnail.replace("-thumb.webp", "-preview.webp");
-  const number = thumbnail.match(/-(\d+)-thumb\.webp$/)?.[1] ?? "";
-  const label = categoryDefinitions.find((category) => category.id === style)?.label ?? style;
-  return { id: thumbnail.replace("-thumb.webp", ""), name: `${label} ${number}`, thumbnail: `/thumbnails/${style}/${thumbnail}`, image: `/previews/${style}/${preview}` };
+function createTemplate(template: TemplateRecord): Template {
+  if (!template.image) return { id: template.id, name: template.name };
+  return {
+    id: template.id,
+    name: template.name,
+    thumbnail: template.image.replace("/previews/", "/thumbnails/").replace("-preview.webp", "-thumb.webp"),
+    image: template.image,
+  };
 }
 
-const originalTextTemplate: Template = { id: "plain-paper", name: "Plain Paper" };
-const availableTemplates: Template[] = [
-  ...templateStyles.flatMap((style) => templates[style].map((thumbnail) => createTemplate(style, thumbnail))),
-  originalTextTemplate,
-];
-const defaultTemplateId = templates.architectural[0] ? createTemplate("architectural", templates.architectural[0]).id : originalTextTemplate.id;
+const originalTextRecord = templateRecords.find((template) => template.category === "original-text");
+const originalTextTemplate: Template = originalTextRecord ? createTemplate(originalTextRecord) : { id: "plain-paper", name: "Plain Paper" };
+const availableTemplates: Template[] = templateRecords.map(createTemplate);
+const defaultTemplateId = templateRecords.find((template) => template.category === "architectural")?.id ?? originalTextTemplate.id;
 
 type Draft = { id: string; data: ItineraryData; selectedTemplateId: string; updatedAt: string };
 const freshItem = (): ItineraryItem => ({ id: crypto.randomUUID(), startTime: "", endTime: "", activity: "", notes: "" });
@@ -165,6 +169,16 @@ export function ItineraryMaker() {
   }, []);
 
   useEffect(() => {
+    const requestedTemplateId = new URLSearchParams(window.location.search).get("template");
+    const requestedTemplate = templateRecords.find((template) => template.id === requestedTemplateId);
+    if (!requestedTemplate) return;
+    setSelectedTemplateId(requestedTemplate.id);
+    setCategory(requestedTemplate.id === "plain-paper" ? "original-text" : requestedTemplate.category as TemplateStyle);
+    const scrollFrame = window.requestAnimationFrame(() => document.getElementById("trip-editor")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    return () => window.cancelAnimationFrame(scrollFrame);
+  }, []);
+
+  useEffect(() => {
     if (!modalOpen) return;
     const original = document.body.style.overflow;
     const close = (event: KeyboardEvent) => { if (event.key === "Escape") setModalOpen(false); };
@@ -233,7 +247,7 @@ export function ItineraryMaker() {
   const currentDateSummary = useMemo(() => data.startDate && data.returnDate ? `${readableDate(data.startDate)} — ${readableDate(data.returnDate)}` : "", [data.startDate, data.returnDate]);
 
   return <main>
-    <header className="site-header"><div className="nav-shell"><a href="#top" className="brand">Trip Itinerary Maker</a><nav aria-label="Main navigation"><button onClick={scrollToEditor} className="plan-button">Plan My Trip</button><a href="#template-section">Templates <span>▾</span></a><a href="#about">About</a></nav></div></header>
+    <header className="site-header"><div className="nav-shell"><a href="#top" className="brand">Trip Itinerary Maker</a><nav aria-label="Main navigation"><button onClick={scrollToEditor} className="plan-button">Plan My Trip</button><a href="/travel-planner-templates/">Templates <span>▾</span></a><a href="#about">About</a></nav></div></header>
     <section id="top" className="hero"><div><h1>Trip Itinerary Template — Create, Edit &amp; Download Free</h1><p>Free trip itinerary template — fill in, pick a design, download PDF &amp; edit anytime. No sign-up.</p></div></section>
     <section id="trip-editor" className="editor-intro"><h2>Create, download &amp; edit your itinerary anytime — free, no sign-up required</h2><p className="reassurance">Made a mistake? No worries — you can come back and edit anytime after generating. ✏️</p><p>Fill in your trip details below. Your itinerary preview updates automatically.</p></section>
     <div className="workspace">
@@ -266,7 +280,7 @@ export function ItineraryMaker() {
     <section className="mobile-preview"><PreviewPanel {...previewProps} onFullscreen={() => setModalOpen(true)} /></section>
     <section id="about" className="about-section content-width"><h2>About Our Free Trip Itinerary Template</h2><button className="about-toggle" onClick={() => setAboutOpen((open) => !open)} aria-expanded={aboutOpen}>Planning a trip is exciting, but organizing every detail <span>{aboutOpen ? "▾" : "▸"}</span></button><div className={`about-copy ${aboutOpen ? "open" : ""}`}><p>Planning a trip is exciting, but organizing every detail can quickly become overwhelming. Our free trip itinerary template makes it easy. Instead of juggling spreadsheets, notes, and booking confirmations, you can create a clear, beautiful travel itinerary in just a few minutes.</p><p>Start by entering your trip details — dates, destinations, and daily activities. Then choose from our collections of stylish background designs, from sunny and botanical to beach and minimalist. Our online itinerary maker instantly turns your information into a printable PDF itinerary that looks professional enough for visa applications and family road trips alike.</p><p>The best part? Your itinerary is fully editable. Plans change, and yours can too. Come back anytime to update your travel plans — no sign-up, no fees, no complicated software. Every template is free to use, and you can download and print as many copies as you need.</p><p>Whether you are planning a honeymoon, a business trip, or a weekend getaway, our trip itinerary template helps you stay organized and enjoy the journey. Start planning today — it takes less than five minutes.</p></div></section>
     <FaqSection />
-    <footer><nav aria-label="Footer navigation"><a href="#top">Trip Itinerary Maker</a><span> | </span><a href="#template-section">Trip Planning Templates</a><span> | </span><a href="#trip-editor">Travel Planner Templates</a></nav></footer>
+    <footer><nav aria-label="Footer navigation"><a href="#top">Trip Itinerary Maker</a><span className="footer-link-arrow" aria-hidden="true">▸</span><span> | </span><a href="#template-section">Trip Planning Templates</a><span className="footer-link-arrow" aria-hidden="true">▸</span><span> | </span><a href="/travel-planner-templates/">Travel Planner Templates</a><span className="footer-link-arrow" aria-hidden="true">▸</span></nav></footer>
     <div className="pagination-measure" aria-hidden="true" ref={paginationMeasureRef}><ItineraryPreview data={previewData} pageDays={previewData.days} selectedTemplate={selectedTemplate} mode="print" /></div>
     <div className="export-stage" aria-hidden="true" ref={exportRef}><ItineraryPreviewPages data={data} pages={pdfPages} selectedTemplate={selectedTemplate} editLink={editLink} mode="print" /></div>
     {modalOpen && <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Full itinerary preview"><div className="modal-panel"><div className="modal-header"><h2>Full itinerary preview</h2><div><Button className="secondary-action" onClick={downloadPdf} disabled={downloading}><Download size={16} /> {downloading ? "Preparing PDF…" : "Download PDF"}</Button><button className="modal-close" onClick={() => setModalOpen(false)}><X size={18} /> Close preview</button></div></div>{pdfError && <p className="modal-pdf-status pdf-error" role="alert">{pdfError}</p>}{pdfStatus && <p className="modal-pdf-status pdf-status" role="status">{pdfStatus}</p>}<div className="modal-paper"><ItineraryPreviewPages {...previewProps} mode="modal" /></div></div></div>}
@@ -297,7 +311,7 @@ function TimePicker({ value, ariaLabel, onChange }: { value: string; ariaLabel: 
   const openPicker = () => { setHour(value ? value.slice(0, 2) : "00"); setOpen(true); };
   return <span className="time-picker" ref={pickerRef}>
     <button type="button" className="time-picker-trigger" aria-label={ariaLabel} aria-expanded={open} onClick={openPicker}><span>{value || "--:--"}</span><Clock3 size={16} /></button>
-    {open && <span className="time-picker-popover"><label>Hour<select value={hour} onChange={(event) => setHour(event.target.value)}>{Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0")).map((option) => <option key={option} value={option}>{option}</option>)}</select></label><label>Minute<select value={value ? value.slice(3, 5) : "00"} onChange={(event) => { onChange(`${hour}:${event.target.value}`); setOpen(false); }}>{minutes.map((option) => <option key={option} value={option}>{option}</option>)}</select></label></span>}
+    {open && <span className="time-picker-popover"><label>Hour<select value={hour} onChange={(event) => { const nextHour = event.target.value; setHour(nextHour); onChange(`${nextHour}:${value ? value.slice(3, 5) : "00"}`); }}>{Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0")).map((option) => <option key={option} value={option}>{option}</option>)}</select></label><label>Minute<select value={value ? value.slice(3, 5) : "00"} onChange={(event) => { onChange(`${hour}:${event.target.value}`); setOpen(false); }}>{minutes.map((option) => <option key={option} value={option}>{option}</option>)}</select></label></span>}
   </span>;
 }
 
@@ -307,7 +321,7 @@ function TemplateSelector({ category, setCategory, selectedId, onSelect }: { cat
     return <button className={`template-card ${selected ? "selected" : ""}`} onClick={() => onSelect(template)} key={template.id}>{template.thumbnail ? <img src={template.thumbnail} width="300" height="424" alt={`${template.name} trip itinerary template`} loading="lazy" /> : <span className="plain-thumb" />}<span>{template.name}</span>{selected && <i><Check size={12} /></i>}</button>;
   };
 
-  return <section className="template-section" id="template-section"><h2>Choose your itinerary background</h2><p>Pick a design that matches your trip.</p><div className="category-tabs" aria-label="Template categories">{categoryDefinitions.map((item) => <button key={item.id} onClick={() => setCategory(item.id)} className={category === item.id ? "active" : ""}>{item.label}</button>)}</div>{templateStyles.map((style) => <div key={style} className={`template-grid ${category === style ? "" : "hidden"}`}>{templates[style].map((thumbnail) => renderCard(createTemplate(style, thumbnail)))}</div>)}<div className={`template-grid ${category === "original-text" ? "" : "hidden"}`}>{renderCard(originalTextTemplate)}</div></section>;
+  return <section className="template-section" id="template-section"><h2>Choose your itinerary background</h2><div className="template-section-subheading"><p>Pick a design that matches your trip.</p><a href="/travel-planner-templates/" className="browse-all-link">Browse all 40+ free travel planner templates <span aria-hidden="true">→</span></a></div><div className="category-tabs" aria-label="Template categories">{categoryDefinitions.map((item) => <button key={item.id} onClick={() => setCategory(item.id)} className={category === item.id ? "active" : ""}>{item.label}</button>)}</div>{templateStyles.map((style) => <div key={style} className={`template-grid ${category === style ? "" : "hidden"}`}>{templateRecords.filter((template) => template.category === style).map((template) => renderCard(createTemplate(template)))}</div>)}<div className={`template-grid ${category === "original-text" ? "" : "hidden"}`}>{renderCard(originalTextTemplate)}</div></section>;
 }
 
 function FaqSection() {
