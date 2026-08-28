@@ -53,6 +53,13 @@ function durationDays(start: string, end: string) {
   if (!start || !end || end < start) return null;
   return Math.floor((new Date(`${end}T12:00:00`).getTime() - new Date(`${start}T12:00:00`).getTime()) / 86400000) + 1;
 }
+function calendarDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day, 12);
+}
+function calendarValue(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
 
 type PageLayout = {
   capacity: number;
@@ -254,8 +261,8 @@ export function ItineraryMaker() {
       <div className="editor-column"><section className="editor-card" aria-label="Trip details form">
         <div className="overview-fields">
           <label className="destination-field">Destination<input value={data.destination} onChange={(e) => setField("destination", e.target.value)} placeholder="For example: Tokyo, Japan" /></label>
-          <label>Start date<span className="date-control"><input type="date" value={data.startDate} onPointerDown={(e) => e.currentTarget.showPicker?.()} onChange={(e) => setField("startDate", e.target.value)} aria-label="Select start date" /><span className={data.startDate ? "has-value" : ""}>{readableDate(data.startDate) || "Select start date"}<CalendarDays size={16} /></span></span></label>
-          <label>Return date<span className="date-control"><input type="date" min={data.startDate || undefined} value={data.returnDate} onPointerDown={(e) => e.currentTarget.showPicker?.()} onChange={(e) => setField("returnDate", e.target.value)} aria-label="Select return date" /><span className={data.returnDate ? "has-value" : ""}>{readableDate(data.returnDate) || "Select return date"}<CalendarDays size={16} /></span></span></label>
+          <label>Start date<DatePicker value={data.startDate} onChange={(value) => setField("startDate", value)} ariaLabel="Select start date" /></label>
+          <label>Return date<DatePicker value={data.returnDate} min={data.startDate || undefined} onChange={(value) => setField("returnDate", value)} ariaLabel="Select return date" /></label>
         </div>
         {currentDateSummary && <p className="date-summary">{currentDateSummary}</p>}{dateError && <p className="form-error" role="alert">{dateError}</p>}
         <div className="days-editor">
@@ -295,11 +302,48 @@ function PreviewPanel({ data, pages, selectedTemplate, editLink, onFullscreen }:
   return <section className="preview-panel"><div className="section-heading"><div><h2>Your Itinerary Preview</h2><span>LIVE PREVIEW</span></div><button onClick={onFullscreen} aria-label="Open full itinerary preview"><Expand size={17} /></button></div><ItineraryPreviewPages data={data} pages={pages} selectedTemplate={selectedTemplate} editLink={editLink} mode="screen" /></section>;
 }
 
+function DatePicker({ value, min, onChange, ariaLabel }: { value: string; min?: string; onChange: (value: string) => void; ariaLabel: string }) {
+  const [open, setOpen] = useState(false);
+  const pickerRef = useRef<HTMLSpanElement>(null);
+  const [visibleMonth, setVisibleMonth] = useState(() => calendarDate(value || min || calendarValue(new Date())));
+  const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1, 12);
+  const firstWeekday = monthStart.getDay();
+  const daysInMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate();
+  const monthLabel = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(visibleMonth);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => { if (!pickerRef.current?.contains(event.target as Node)) setOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
+  }, [open]);
+
+  const openPicker = () => { setVisibleMonth(calendarDate(value || min || calendarValue(new Date()))); setOpen(true); };
+  return <span className="date-control" ref={pickerRef}>
+    <button type="button" className={`date-picker-trigger ${value ? "has-value" : ""}`} aria-label={ariaLabel} aria-expanded={open} onClick={openPicker}>{readableDate(value) || "Select date"}<CalendarDays size={16} /></button>
+    {open && <span className="date-picker-popover" role="dialog" aria-label={ariaLabel}>
+      <span className="date-picker-header"><button type="button" aria-label="Previous month" onClick={() => setVisibleMonth(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1, 12))}>‹</button><strong>{monthLabel}</strong><button type="button" aria-label="Next month" onClick={() => setVisibleMonth(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1, 12))}>›</button></span>
+      <span className="date-picker-weekdays" aria-hidden="true">{["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => <span key={day}>{day}</span>)}</span>
+      <span className="date-picker-days">{Array.from({ length: firstWeekday + daysInMonth }, (_, index) => {
+        if (index < firstWeekday) return <span key={`blank-${index}`} aria-hidden="true" />;
+        const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), index - firstWeekday + 1, 12);
+        const nextValue = calendarValue(date);
+        const disabled = Boolean(min && nextValue < min);
+        return <button type="button" key={nextValue} disabled={disabled} className={nextValue === value ? "selected" : ""} aria-pressed={nextValue === value} onClick={() => { onChange(nextValue); setOpen(false); }}>{date.getDate()}</button>;
+      })}</span>
+    </span>}
+  </span>;
+}
+
 function TimePicker({ value, ariaLabel, onChange }: { value: string; ariaLabel: string; onChange: (value: string) => void }) {
   const [open, setOpen] = useState(false);
   const [hour, setHour] = useState(value ? value.slice(0, 2) : "00");
   const pickerRef = useRef<HTMLSpanElement>(null);
   const minutes = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
+  const hours = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
+  const minute = value ? value.slice(3, 5) : "00";
 
   useEffect(() => {
     if (!open) return;
@@ -311,7 +355,10 @@ function TimePicker({ value, ariaLabel, onChange }: { value: string; ariaLabel: 
   const openPicker = () => { setHour(value ? value.slice(0, 2) : "00"); setOpen(true); };
   return <span className="time-picker" ref={pickerRef}>
     <button type="button" className="time-picker-trigger" aria-label={ariaLabel} aria-expanded={open} onClick={openPicker}><span>{value || "--:--"}</span><Clock3 size={16} /></button>
-    {open && <span className="time-picker-popover"><label>Hour<select value={hour} onChange={(event) => { const nextHour = event.target.value; setHour(nextHour); onChange(`${nextHour}:${value ? value.slice(3, 5) : "00"}`); }}>{Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0")).map((option) => <option key={option} value={option}>{option}</option>)}</select></label><label>Minute<select value={value ? value.slice(3, 5) : "00"} onChange={(event) => { onChange(`${hour}:${event.target.value}`); setOpen(false); }}>{minutes.map((option) => <option key={option} value={option}>{option}</option>)}</select></label></span>}
+    {open && <span className="time-picker-popover" role="group" aria-label={`${ariaLabel} options`}>
+      <span className="time-picker-column"><span className="time-picker-label">Hour</span><span className="time-picker-options" role="listbox" aria-label="Hour">{hours.map((option) => <button type="button" role="option" aria-selected={hour === option} className={hour === option ? "selected" : ""} key={option} onClick={() => { setHour(option); onChange(`${option}:${minute}`); }}>{option}</button>)}</span></span>
+      <span className="time-picker-column"><span className="time-picker-label">Minute</span><span className="time-picker-options" role="listbox" aria-label="Minute">{minutes.map((option) => <button type="button" role="option" aria-selected={minute === option} className={minute === option ? "selected" : ""} key={option} onClick={() => { onChange(`${hour}:${option}`); setOpen(false); }}>{option}</button>)}</span></span>
+    </span>}
   </span>;
 }
 
