@@ -173,6 +173,6 @@ export default function TravelPlannerTemplatesPage() {
         </section>
       </div>
     </main>
-    <footer><nav aria-label="Footer navigation"><Link href="/#top">Trip Itinerary Maker</Link><span className="footer-link-arrow" aria-hidden="true">▸</span><span> | </span><Link href="/#template-section">Trip Planning Templates</Link><span className="footer-link-arrow" aria-hidden="true">▸</span><span> | </span><Link href="/travel-planner-templates/">Travel Planner Templates</Link><span className="footer-link-arrow" aria-hidden="true">▸</span></nav><a className="toolhunter-badge" href="https://toolhunter.ai/ai-tool/trip-itinerary-maker?ref=badge" target="_blank" rel="noopener"><img src="https://toolhunter.ai/badge/trip-itinerary-maker.svg?theme=light" alt="Featured on Toolhunter" width="200" height="50" /></a><p className="footer-copyright">© 2026 Trip Itinerary Maker</p></footer>
+    <footer><nav aria-label="Footer navigation"><Link href="/#top">Trip Itinerary Maker</Link><span className="footer-link-arrow" aria-hidden="true">▸</span><span> | </span><Link href="/#template-section">Trip Planning Templates</Link><span className="footer-link-arrow" aria-hidden="true">▸</span><span> | </span><Link href="/travel-planner-templates/">Travel Planner Templates</Link><span className="footer-link-arrow" aria-hidden="true">▸</span></nav><p className="footer-copyright">© 2026 Trip Itinerary Maker</p></footer>
   </>;
 }
